@@ -10,6 +10,7 @@ dotenv.config({ path: './.env' });
 
 const seedOrderDetails = async () => {
     try {
+        console.log('⚙️ [ORDER DETAIL SEEDER] Bắt đầu quá trình nạp dữ liệu...');
         await connectDB();
 
         // Lấy danh sách các Order và Package để tạo OrderDetail
@@ -17,13 +18,15 @@ const seedOrderDetails = async () => {
         const packages = await Package.find({});
 
         if (orders.length === 0) {
-            console.log('⚠️ [ORDER DETAIL SEEDER] Không tìm thấy Order nào. Vui lòng seed Order trước.');
-            process.exit(1);
+            console.warn('⚠️ [ORDER DETAIL SEEDER] Không tìm thấy Order nào. Vui lòng seed Order trước.');
+            process.exit();
         }
         if (packages.length === 0) {
-            console.log('⚠️ [ORDER DETAIL SEEDER] Không tìm thấy Package nào. Vui lòng seed Package trước.');
-            process.exit(1);
+            console.warn('⚠️ [ORDER DETAIL SEEDER] Không tìm thấy Package nào. Vui lòng seed Package trước.');
+            process.exit();
         }
+        
+        console.log('🔗 [ORDER DETAIL SEEDER] Liên kết Orders và Packages...');
 
         // Dữ liệu mẫu OrderDetail
         const orderDetails = [
@@ -52,27 +55,30 @@ const seedOrderDetails = async () => {
 
         // Xóa dữ liệu cũ
         await OrderDetail.deleteMany();
-        console.log('🗑️ [ORDER DETAIL SEEDER] Đã dọn dẹp bảng OrderDetails.');
+        console.log('🗑️  [ORDER DETAIL SEEDER] Dọn dẹp dữ liệu cũ...');
 
         // Nạp dữ liệu mới
         await OrderDetail.create(orderDetails);
-        console.log('✅ [ORDER DETAIL SEEDER] Nạp dữ liệu OrderDetails thành công!');
+        console.log('🌱 [ORDER DETAIL SEEDER] Nạp dữ liệu OrderDetails mới...');
 
+        console.log('🎉 [ORDER DETAIL SEEDER] Hoàn tất!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [ORDER DETAIL SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [ORDER DETAIL SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };
 
 const destroyOrderDetails = async () => {
     try {
+        console.log('⚙️ [ORDER DETAIL SEEDER] Bắt đầu quá trình HỦY DIỆT dữ liệu...');
         await connectDB();
         await OrderDetail.deleteMany();
-        console.log('🧹 [ORDER DETAIL SEEDER] Đã xóa trắng bảng OrderDetails.');
+        console.log('🔥 [ORDER DETAIL SEEDER] Hủy diệt toàn bộ dữ liệu OrderDetails...');
+        console.log('✨ [ORDER DETAIL SEEDER] Đã xóa sạch!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [ORDER DETAIL SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [ORDER DETAIL SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };

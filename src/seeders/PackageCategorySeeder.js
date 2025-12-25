@@ -37,31 +37,35 @@ const packageCategories = [
 
 const seedPackageCategories = async () => {
     try {
+        console.log('⚙️ [PACKAGE CATEGORY SEEDER] Bắt đầu quá trình nạp dữ liệu...');
         await connectDB();
 
         // Xóa dữ liệu cũ
         await PackageCategory.deleteMany();
-        console.log('🗑️ [PACKAGE CATEGORY SEEDER] Đã dọn dẹp bảng Package Categories.');
+        console.log('🗑️  [PACKAGE CATEGORY SEEDER] Dọn dẹp dữ liệu cũ...');
 
         // Nạp dữ liệu mới
         await PackageCategory.create(packageCategories);
-        console.log('✅ [PACKAGE CATEGORY SEEDER] Nạp dữ liệu Package Categories thành công!');
-
+        console.log('🌱 [PACKAGE CATEGORY SEEDER] Nạp dữ liệu Package Categories mới...');
+        
+        console.log('🎉 [PACKAGE CATEGORY SEEDER] Hoàn tất!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [PACKAGE CATEGORY SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [PACKAGE CATEGORY SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };
 
 const destroyPackageCategories = async () => {
     try {
+        console.log('⚙️ [PACKAGE CATEGORY SEEDER] Bắt đầu quá trình HỦY DIỆT dữ liệu...');
         await connectDB();
         await PackageCategory.deleteMany();
-        console.log('🧹 [PACKAGE CATEGORY SEEDER] Đã xóa trắng bảng Package Categories.');
+        console.log('🔥 [PACKAGE CATEGORY SEEDER] Hủy diệt toàn bộ dữ liệu Package Categories...');
+        console.log('✨ [PACKAGE CATEGORY SEEDER] Đã xóa sạch!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [PACKAGE CATEGORY SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [PACKAGE CATEGORY SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };

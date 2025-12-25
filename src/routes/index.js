@@ -11,6 +11,7 @@ import * as CoachController from '../controllers/CoachController.js';
 import * as StudentController from '../controllers/StudentController.js';
 import * as ScheduleController from '../controllers/ScheduleController.js';
 import * as RoomController from '../controllers/RoomController.js';
+import * as PostController from '../controllers/PostController.js';
 
 // Import Middlewares as namespaces
 import * as AdminMiddleware from '../middlewares/AdminMiddleware.js';
@@ -82,6 +83,18 @@ router.get('/admin/orders',
     OrderController.getAllOrders
 );
 
+router.post('/admin/check-order/:id',
+    AdminMiddleware.protect,
+    AdminMiddleware.authorizeSuperAdmin,
+    OrderController.checkOrder
+)
+
+router.post('/admin/cancel-order/:id',
+    AdminMiddleware.protect,
+    AdminMiddleware.authorizeSuperAdmin,
+    OrderController.cancelOrder
+)
+
 router.post('/admin/lock-open-customer/:id',
     AdminMiddleware.protect,
     AdminMiddleware.authorizeSuperAdmin,
@@ -112,25 +125,28 @@ router.post('/admin/ban-coach/:id',
     CoachController.banCoach
 )
 
-// Routes for Rooms
 router.get('/admin/all-rooms',
     AdminMiddleware.protect,
     RoomController.getAllRooms
 );
+
 router.get('/admin/get-room/:id',
     AdminMiddleware.protect,
     RoomController.getRoomById
 );
+
 router.post('/admin/add-room',
     AdminMiddleware.protect,
     AdminMiddleware.authorizeSuperAdmin,
     RoomController.createRoom
 );
+
 router.post('/admin/update-room/:id',
     AdminMiddleware.protect,
     AdminMiddleware.authorizeSuperAdmin,
     RoomController.updateRoom
 );
+
 router.post('/admin/delete-room/:id',
     AdminMiddleware.protect,
     AdminMiddleware.authorizeSuperAdmin,
@@ -160,6 +176,10 @@ router.post('/admin/unmaintain-room/:id',
 // Lấy danh sách khách hàng (Admin private)
 router.post('/client/login',
     ClientController.loginClient
+);
+
+router.post('/client/register',
+    ClientController.registerClient
 );
 
 router.get('/client/check-login',
@@ -209,6 +229,23 @@ router.get('/client/get-room/:id',
     ClientMiddleware.protect,
     RoomController.getRoomById
 );
+
+router.get('/client/my-profile',
+    ClientMiddleware.protect,
+    ClientController.getMyProfile
+)
+router.post('/client/update-profile',
+    ClientMiddleware.protect,
+    ClientController.updateProfile
+)
+router.post('/client/update-avatar',
+    ClientMiddleware.protect,
+    ClientController.updateAvatar
+)
+router.get('/client/all-post/',
+    ClientMiddleware.protect,
+    PostController.getAllPosts
+)
 /**
  * ==========================================
  * ROUTES CHO COACH (HLV) - Placeholder

@@ -55,3 +55,8 @@ export const ROOM_STATUS = {
     MAINTENANCE: 'maintenance'
 
 };
+
+export const POST_STATUS = {
+    DRAFT: 0,
+    PUBLISHED: 1
+};

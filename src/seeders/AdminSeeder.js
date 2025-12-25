@@ -20,31 +20,35 @@ const admins = [
 
 const seedAdmins = async () => {
     try {
+        console.log('⚙️ [ADMIN SEEDER] Bắt đầu quá trình nạp dữ liệu...');
         await connectDB();
 
         // Xóa dữ liệu cũ
         await Admin.deleteMany();
-        console.log('🗑️ [ADMIN SEEDER] Đã dọn dẹp bảng Admins.');
+        console.log('🗑️  [ADMIN SEEDER] Dọn dẹp dữ liệu cũ...');
 
         // Nạp dữ liệu mới (.create để kích hoạt middleware hash password)
         await Admin.create(admins);
-        console.log('✅ [ADMIN SEEDER] Nạp dữ liệu Admins thành công!');
-
+        console.log('🌱 [ADMIN SEEDER] Nạp dữ liệu Admins mới...');
+        
+        console.log('🎉 [ADMIN SEEDER] Hoàn tất!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [ADMIN SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [ADMIN SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };
 
 const destroyAdmins = async () => {
     try {
+        console.log('⚙️ [ADMIN SEEDER] Bắt đầu quá trình HỦY DIỆT dữ liệu...');
         await connectDB();
         await Admin.deleteMany();
-        console.log('🧹 [ADMIN SEEDER] Đã xóa trắng bảng Admins.');
+        console.log('🔥 [ADMIN SEEDER] Hủy diệt toàn bộ dữ liệu Admins...');
+        console.log('✨ [ADMIN SEEDER] Đã xóa sạch!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [ADMIN SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [ADMIN SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };

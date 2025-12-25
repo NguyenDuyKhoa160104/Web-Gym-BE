@@ -1,12 +1,9 @@
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import connectDB from '../config/db.js';
 import Room from '../models/Room.js';
 import { ROOM_STATUS } from '../utils/constants.js';
 
 dotenv.config({ path: './.env' });
-
-await connectDB();
 
 const rooms = [
     {
@@ -41,17 +38,40 @@ const rooms = [
 
 const seedRooms = async () => {
     try {
+        console.log('⚙️ [ROOM SEEDER] Bắt đầu quá trình nạp dữ liệu...');
+        await connectDB();
+
         await Room.deleteMany();
-        console.log('Rooms are deleted');
+        console.log('🗑️  [ROOM SEEDER] Dọn dẹp dữ liệu cũ...');
 
         await Room.insertMany(rooms);
-        console.log('Rooms are added');
-
+        console.log('🌱 [ROOM SEEDER] Nạp dữ liệu Rooms mới...');
+        
+        console.log('🎉 [ROOM SEEDER] Hoàn tất!');
         process.exit();
     } catch (error) {
-        console.error(`${error}`);
+        console.error(`💀 [ROOM SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };
 
-seedRooms();
+const destroyRooms = async () => {
+    try {
+        console.log('⚙️ [ROOM SEEDER] Bắt đầu quá trình HỦY DIỆT dữ liệu...');
+        await connectDB();
+        await Room.deleteMany();
+        console.log('🔥 [ROOM SEEDER] Hủy diệt toàn bộ dữ liệu Rooms...');
+        console.log('✨ [ROOM SEEDER] Đã xóa sạch!');
+        process.exit();
+    } catch (error) {
+        console.error(`💀 [ROOM SEEDER] Lỗi kinh hoàng: ${error.message}`);
+        process.exit(1);
+    }
+};
+
+if (process.argv[2] === '-d') {
+    destroyRooms();
+} else {
+    seedRooms();
+}
+

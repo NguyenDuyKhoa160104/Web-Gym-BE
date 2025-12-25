@@ -139,3 +139,88 @@ export const getAllOrders = async (req, res) => {
         });
     }
 };
+
+/**
+ * @desc    Helper function to update an order's status
+ * @param   {string} orderId
+ * @param   {number} newStatus
+ * @param   {number | null} newPaymentStatus
+ * @param   {object} res
+ * @returns {Promise<void>}
+ */
+const _updateOrderStatus = async (orderId, newStatus, newPaymentStatus, res, successMessage) => {
+    try {
+        const order = await Order.findById(orderId);
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy đơn hàng.',
+            });
+        }
+
+        // Prevent updating status of already cancelled or completed orders
+        if (order.status === ORDER_STATUS.CANCELLED || order.status === ORDER_STATUS.COMPLETED) {
+             return res.status(400).json({
+                success: false,
+                message: `Không thể thay đổi trạng thái của đơn hàng đã ${order.status === ORDER_STATUS.COMPLETED ? 'hoàn thành' : 'bị hủy'}.`,
+            });
+        }
+
+        order.status = newStatus;
+        if (newPaymentStatus !== null) {
+            order.paymentStatus = newPaymentStatus;
+        }
+
+        const updatedOrder = await order.save();
+
+        res.status(200).json({
+            success: true,
+            message: successMessage,
+            data: updatedOrder,
+        });
+
+    } catch (error) {
+        console.error(`❌ [UPDATE ORDER STATUS ERROR]: ${error.message}`);
+        if (error.name === 'CastError') {
+            return res.status(400).json({
+                success: false,
+                message: 'ID đơn hàng không hợp lệ.',
+            });
+        }
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống, vui lòng thử lại sau.',
+        });
+    }
+};
+
+/**
+ * @desc    Admin xác nhận đơn hàng (đã thanh toán)
+ * @route   POST /api/admin/check-order/:id
+ * @access  Private (Admin)
+ */
+export const checkOrder = async (req, res) => {
+    await _updateOrderStatus(
+        req.params.id,
+        ORDER_STATUS.COMPLETED,
+        PAYMENT_STATUS.PAID,
+        res,
+        'Xác nhận đơn hàng thành công.'
+    );
+};
+
+/**
+ * @desc    Admin hủy đơn hàng
+ * @route   POST /api/admin/cancel-order/:id
+ * @access  Private (Admin)
+ */
+export const cancelOrder = async (req, res) => {
+    await _updateOrderStatus(
+        req.params.id,
+        ORDER_STATUS.CANCELLED,
+        null, // Do not change payment status on cancellation
+        res,
+        'Hủy đơn hàng thành công.'
+    );
+};

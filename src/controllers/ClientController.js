@@ -78,6 +78,85 @@ export const loginClient = async (req, res) => {
 };
 
 /**
+ * @desc    Đăng ký tài khoản mới cho Hội viên (Client)
+ * @route   POST /api/client/register
+ * @access  Public
+ */
+export const registerClient = async (req, res) => {
+    try {
+        const { fullname, email, password, phone } = req.body;
+
+        // 1. Kiểm tra dữ liệu đầu vào
+        if (!fullname || !email || !password || !phone) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng cung cấp đầy đủ thông tin: họ tên, email, mật khẩu và số điện thoại.',
+            });
+        }
+        
+        // 2. Kiểm tra password đủ dài
+        if(password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mật khẩu phải có ít nhất 6 ký tự.'
+            })
+        }
+
+        // 3. Kiểm tra xem email đã tồn tại chưa
+        const existingClient = await Client.findOne({ email });
+        if (existingClient) {
+            return res.status(409).json({ // 409 Conflict
+                success: false,
+                message: 'Email này đã được sử dụng để đăng ký tài khoản.',
+            });
+        }
+
+        // 4. Tạo client mới (mật khẩu sẽ được hash tự động bởi pre-save hook)
+        const newClient = await Client.create({
+            fullname,
+            email,
+            password,
+            phone,
+            status: ACCOUNT_STATUS.ACTIVE // Mặc định là active
+        });
+        
+        // Lấy lại thông tin client vừa tạo mà không có mật khẩu
+        const clientData = await Client.findById(newClient._id).select('-password');
+
+
+        // 5. Tạo JWT Token để tự động đăng nhập
+        const token = jwt.sign(
+            { id: newClient._id, role: 'client' },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRE || '7d' }
+        );
+
+        // 6. Trả về kết quả
+        res.status(201).json({
+            success: true,
+            message: 'Đăng ký tài khoản thành công.',
+            token,
+            data: clientData
+        });
+
+    } catch (error) {
+        console.error(`❌ [CLIENT REGISTER ERROR]: ${error.message}`);
+        // Handle potential validation errors from Mongoose
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({
+                success: false,
+                message: messages.join(' ')
+            });
+        }
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống, vui lòng thử lại sau.',
+        });
+    }
+};
+
+/**
  * @desc    Kiểm tra trạng thái đăng nhập của Hội viên
  * @route   GET /api/client/check-login
  * @access  Private (Yêu cầu ClientMiddleware.protect)
@@ -296,4 +375,119 @@ export const lockOpenCustomer = async (req, res) => {
 export const banCustomer = async (req, res) => {
     const { id: clientId } = req.params;
     await _updateClientStatus(clientId, ACCOUNT_STATUS.BANNED, res);
+};
+
+/**
+ * @desc    Lấy thông tin cá nhân của Client (từ token)
+ * @route   GET /api/client/my-profile
+ * @access  Private (Client)
+ */
+export const getMyProfile = async (req, res) => {
+    try {
+        // The `protect` middleware has already fetched the client and attached it to req.client
+        // We can just return it. This avoids a redundant database query.
+        const client = req.client;
+
+        res.status(200).json({
+            success: true,
+            data: client,
+        });
+    } catch (error) {
+        console.error(`❌ [GET MY PROFILE ERROR]: ${error.message}`);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống, vui lòng thử lại sau.',
+        });
+    }
+};
+
+/**
+ * @desc    Cập nhật thông tin cá nhân của Client (từ token)
+ * @route   POST /api/client/update-profile
+ * @access  Private (Client)
+ */
+export const updateProfile = async (req, res) => {
+    try {
+        // ID is retrieved from the token via `protect` middleware
+        const clientId = req.client._id;
+        const { fullname, phone, address, date_of_birth, gender, health_info } = req.body;
+
+        const client = await Client.findById(clientId);
+
+        if (!client) {
+            // This case should theoretically not be reached if the token is valid
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy người dùng',
+            });
+        }
+
+        // Cập nhật thông tin
+        client.fullname = fullname || client.fullname;
+        client.phone = phone || client.phone;
+        client.address = address || client.address;
+        client.date_of_birth = date_of_birth || client.date_of_birth;
+        client.gender = gender || client.gender;
+        client.health_info = health_info || client.health_info;
+
+        const updatedClient = await client.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Cập nhật thông tin thành công',
+            data: updatedClient,
+        });
+
+    } catch (error) {
+        console.error(`❌ [UPDATE PROFILE ERROR]: ${error.message}`);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống, vui lòng thử lại sau.',
+        });
+    }
+};
+
+/**
+ * @desc    Cập nhật ảnh đại diện của Client (từ token)
+ * @route   POST /api/client/update-avatar
+ * @access  Private (Client)
+ */
+export const updateAvatar = async (req, res) => {
+    try {
+        // ID is retrieved from the token via `protect` middleware
+        const clientId = req.client._id;
+        const { avatar_url } = req.body;
+
+        if (!avatar_url) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng cung cấp URL ảnh đại diện mới',
+            });
+        }
+
+        const client = await Client.findById(clientId);
+
+        if (!client) {
+            // This case should theoretically not be reached if the token is valid
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy người dùng',
+            });
+        }
+
+        client.avatar_url = avatar_url;
+        const updatedClient = await client.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Cập nhật ảnh đại diện thành công',
+            data: updatedClient,
+        });
+    } catch (error) {
+        console.error(`❌ [UPDATE AVATAR ERROR]: ${error.message}`);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống, vui lòng thử lại sau.',
+        });
+    }
 };

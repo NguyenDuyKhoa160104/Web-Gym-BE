@@ -10,14 +10,16 @@ dotenv.config({ path: './.env' });
 
 const seedOrders = async () => {
     try {
+        console.log('⚙️ [ORDER SEEDER] Bắt đầu quá trình nạp dữ liệu...');
         await connectDB();
 
         // Lấy danh sách các Client để tạo Order
         const clients = await Client.find({});
         if (clients.length === 0) {
-            console.log('⚠️ [ORDER SEEDER] Không tìm thấy Client nào. Vui lòng seed Client trước.');
-            process.exit(1);
+            console.warn('⚠️ [ORDER SEEDER] Không tìm thấy Client nào. Vui lòng seed Client trước.');
+            process.exit();
         }
+        console.log('🔗 [ORDER SEEDER] Liên kết với dữ liệu Clients...');
 
         // Dữ liệu mẫu Order
         const orders = [
@@ -49,27 +51,30 @@ const seedOrders = async () => {
 
         // Xóa dữ liệu cũ
         await Order.deleteMany();
-        console.log('🗑️ [ORDER SEEDER] Đã dọn dẹp bảng Orders.');
+        console.log('🗑️  [ORDER SEEDER] Dọn dẹp dữ liệu cũ...');
 
         // Nạp dữ liệu mới
         await Order.create(orders);
-        console.log('✅ [ORDER SEEDER] Nạp dữ liệu Orders thành công!');
-
+        console.log('🌱 [ORDER SEEDER] Nạp dữ liệu Orders mới...');
+        
+        console.log('🎉 [ORDER SEEDER] Hoàn tất!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [ORDER SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [ORDER SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };
 
 const destroyOrders = async () => {
     try {
+        console.log('⚙️ [ORDER SEEDER] Bắt đầu quá trình HỦY DIỆT dữ liệu...');
         await connectDB();
         await Order.deleteMany();
-        console.log('🧹 [ORDER SEEDER] Đã xóa trắng bảng Orders.');
+        console.log('🔥 [ORDER SEEDER] Hủy diệt toàn bộ dữ liệu Orders...');
+        console.log('✨ [ORDER SEEDER] Đã xóa sạch!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [ORDER SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [ORDER SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };

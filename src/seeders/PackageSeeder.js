@@ -10,19 +10,18 @@ dotenv.config({ path: './.env' });
 
 const seedPackages = async () => {
     try {
+        console.log('⚙️ [PACKAGE SEEDER] Bắt đầu quá trình nạp dữ liệu...');
         await connectDB();
 
         // 1. Đảm bảo rằng các danh mục đã tồn tại để liên kết
-        // Nếu không có danh mục, có thể chạy PackageCategorySeeder trước
+        console.log('🔗 [PACKAGE SEEDER] Kiểm tra và liên kết với Package Categories...');
         let generalCategory = await PackageCategory.findOne({ name: 'Gói tập thông thường' });
         let ptCategory = await PackageCategory.findOne({ name: 'Gói PT cá nhân' });
         let yogaCategory = await PackageCategory.findOne({ name: 'Gói Yoga & Pilates' });
 
         if (!generalCategory || !ptCategory || !yogaCategory) {
-            console.warn('⚠️ [PACKAGE SEEDER] Một số danh mục gói tập chưa tồn tại. Vui lòng chạy PackageCategorySeeder trước.');
-            // Tạo tạm các danh mục nếu không có để PackageSeeder không bị lỗi
-            // Hoặc có thể thoát và yêu cầu chạy Category Seeder trước
-            // For now, let's create them if they don't exist
+            console.warn('⚠️ [PACKAGE SEEDER] Một số danh mục gói tập chưa tồn tại. Tự động tạo mới...');
+            
             await PackageCategory.findOneAndUpdate(
                 { name: 'Gói tập thông thường' },
                 { description: 'Các gói tập thể dục cơ bản và nâng cao tại phòng gym.', status: ACCOUNT_STATUS.ACTIVE, displayOrder: 1 },
@@ -39,20 +38,17 @@ const seedPackages = async () => {
                 { upsert: true, new: true }
             );
 
-            // Re-fetch categories after potential upsert
-            const newGeneralCategory = await PackageCategory.findOne({ name: 'Gói tập thông thường' });
-            const newPtCategory = await PackageCategory.findOne({ name: 'Gói PT cá nhân' });
-            const newYogaCategory = await PackageCategory.findOne({ name: 'Gói Yoga & Pilates' });
+            console.log('✅ [PACKAGE SEEDER] Đã tạo xong danh mục còn thiếu.');
 
-            if (!newGeneralCategory || !newPtCategory || !newYogaCategory) {
-                console.error('❌ [PACKAGE SEEDER] Không thể tạo hoặc tìm thấy các danh mục gói tập cần thiết.');
+            // Re-fetch categories after potential upsert
+            generalCategory = await PackageCategory.findOne({ name: 'Gói tập thông thường' });
+            ptCategory = await PackageCategory.findOne({ name: 'Gói PT cá nhân' });
+            yogaCategory = await PackageCategory.findOne({ name: 'Gói Yoga & Pilates' });
+
+            if (!generalCategory || !ptCategory || !yogaCategory) {
+                console.error('💀 [PACKAGE SEEDER] Không thể tạo hoặc tìm thấy các danh mục gói tập cần thiết.');
                 process.exit(1);
             }
-
-            // Update category references
-            generalCategory = newGeneralCategory;
-            ptCategory = newPtCategory;
-            yogaCategory = newYogaCategory;
         }
 
         // Dữ liệu mẫu Packages
@@ -101,27 +97,30 @@ const seedPackages = async () => {
 
         // Xóa dữ liệu cũ
         await Package.deleteMany();
-        console.log('🗑️ [PACKAGE SEEDER] Đã dọn dẹp bảng Packages.');
+        console.log('🗑️  [PACKAGE SEEDER] Dọn dẹp dữ liệu cũ...');
 
         // Nạp dữ liệu mới
         await Package.create(packages);
-        console.log('✅ [PACKAGE SEEDER] Nạp dữ liệu Packages thành công!');
+        console.log('🌱 [PACKAGE SEEDER] Nạp dữ liệu Packages mới...');
 
+        console.log('🎉 [PACKAGE SEEDER] Hoàn tất!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [PACKAGE SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [PACKAGE SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };
 
 const destroyPackages = async () => {
     try {
+        console.log('⚙️ [PACKAGE SEEDER] Bắt đầu quá trình HỦY DIỆT dữ liệu...');
         await connectDB();
         await Package.deleteMany();
-        console.log('🧹 [PACKAGE SEEDER] Đã xóa trắng bảng Packages.');
+        console.log('🔥 [PACKAGE SEEDER] Hủy diệt toàn bộ dữ liệu Packages...');
+        console.log('✨ [PACKAGE SEEDER] Đã xóa sạch!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [PACKAGE SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [PACKAGE SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };

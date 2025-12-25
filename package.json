@@ -14,7 +14,8 @@
     "db:seed:order-detail": "node src/seeders/OrderDetailSeeder.js",
     "db:seed:coach": "node src/seeders/CoachSeeder.js",
     "db:seed:room": "node src/seeders/RoomSeeder.js",
-    "db:seed": "npm run db:seed:category && npm run db:seed:package && npm run db:seed:admin && npm run db:seed:client && npm run db:seed:order && npm run db:seed:order-detail && npm run db:seed:coach && npm run db:seed:room"
+    "db:seed:post": "node src/seeders/PostSeeder.js",
+    "db:seed": "npm run db:seed:category && npm run db:seed:package && npm run db:seed:admin && npm run db:seed:client && npm run db:seed:order && npm run db:seed:order-detail && npm run db:seed:coach && npm run db:seed:room && npm run db:seed:post"
   },
   "keywords": [],
   "author": "",

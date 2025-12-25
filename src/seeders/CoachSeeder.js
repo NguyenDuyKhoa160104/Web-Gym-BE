@@ -33,28 +33,32 @@ const coaches = [
 
 const seedCoaches = async () => {
     try {
+        console.log('⚙️ [COACH SEEDER] Bắt đầu quá trình nạp dữ liệu...');
         await connectDB();
         await Coach.deleteMany();
-        console.log('🗑️ [COACH SEEDER] Đã dọn dẹp bảng Coaches.');
+        console.log('🗑️  [COACH SEEDER] Dọn dẹp dữ liệu cũ...');
 
         await Coach.create(coaches);
-        console.log('✅ [COACH SEEDER] Nạp dữ liệu Coaches thành công!');
-
+        console.log('🌱 [COACH SEEDER] Nạp dữ liệu Coaches mới...');
+        
+        console.log('🎉 [COACH SEEDER] Hoàn tất!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [COACH SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [COACH SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };
 
 const destroyCoaches = async () => {
     try {
+        console.log('⚙️ [COACH SEEDER] Bắt đầu quá trình HỦY DIỆT dữ liệu...');
         await connectDB();
         await Coach.deleteMany();
-        console.log('🧹 [COACH SEEDER] Đã xóa trắng bảng Coaches.');
+        console.log('🔥 [COACH SEEDER] Hủy diệt toàn bộ dữ liệu Coaches...');
+        console.log('✨ [COACH SEEDER] Đã xóa sạch!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [COACH SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [COACH SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };

@@ -29,31 +29,35 @@ const clients = [
 
 const seedClients = async () => {
     try {
+        console.log('⚙️ [CLIENT SEEDER] Bắt đầu quá trình nạp dữ liệu...');
         await connectDB();
 
         // Xóa dữ liệu cũ
         await Client.deleteMany();
-        console.log('🗑️ [CLIENT SEEDER] Đã dọn dẹp bảng Clients.');
+        console.log('🗑️  [CLIENT SEEDER] Dọn dẹp dữ liệu cũ...');
 
         // Nạp dữ liệu mới
         await Client.create(clients);
-        console.log('✅ [CLIENT SEEDER] Nạp dữ liệu Clients thành công!');
+        console.log('🌱 [CLIENT SEEDER] Nạp dữ liệu Clients mới...');
 
+        console.log('🎉 [CLIENT SEEDER] Hoàn tất!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [CLIENT SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [CLIENT SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };
 
 const destroyClients = async () => {
     try {
+        console.log('⚙️ [CLIENT SEEDER] Bắt đầu quá trình HỦY DIỆT dữ liệu...');
         await connectDB();
         await Client.deleteMany();
-        console.log('🧹 [CLIENT SEEDER] Đã xóa trắng bảng Clients.');
+        console.log('🔥 [CLIENT SEEDER] Hủy diệt toàn bộ dữ liệu Clients...');
+        console.log('✨ [CLIENT SEEDER] Đã xóa sạch!');
         process.exit();
     } catch (error) {
-        console.error(`❌ [CLIENT SEEDER] Lỗi: ${error.message}`);
+        console.error(`💀 [CLIENT SEEDER] Lỗi kinh hoàng: ${error.message}`);
         process.exit(1);
     }
 };
