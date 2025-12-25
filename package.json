@@ -1,0 +1,35 @@
+{
+  "name": "web-gym-be",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon",
+    "db:seed:category": "node src/seeders/PackageCategorySeeder.js",
+    "db:seed:package": "node src/seeders/PackageSeeder.js",
+    "db:seed:admin": "node src/seeders/AdminSeeder.js",
+    "db:seed:client": "node src/seeders/ClientSeeder.js",
+    "db:seed:order": "node src/seeders/OrderSeeder.js",
+    "db:seed:order-detail": "node src/seeders/OrderDetailSeeder.js",
+    "db:seed:coach": "node src/seeders/CoachSeeder.js",
+    "db:seed:room": "node src/seeders/RoomSeeder.js",
+    "db:seed": "npm run db:seed:category && npm run db:seed:package && npm run db:seed:admin && npm run db:seed:client && npm run db:seed:order && npm run db:seed:order-detail && npm run db:seed:coach && npm run db:seed:room"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.0.2",
+    "morgan": "^1.10.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
