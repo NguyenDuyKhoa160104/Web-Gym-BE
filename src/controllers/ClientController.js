@@ -63,7 +63,7 @@ export const loginClient = async (req, res) => {
                 fullname: client.fullname,
                 email: client.email,
                 phone: client.phone,
-                avatar_url: client.avatar_url,
+                avatar_url: client.avatar_url || '',
                 health_info: client.health_info // Trả về thông tin sức khỏe để hiển thị Dashboard
             }
         });
@@ -122,8 +122,6 @@ export const registerClient = async (req, res) => {
         
         // Lấy lại thông tin client vừa tạo mà không có mật khẩu
         const clientData = await Client.findById(newClient._id).select('-password');
-
-
         // 5. Tạo JWT Token để tự động đăng nhập
         const token = jwt.sign(
             { id: newClient._id, role: 'client' },
@@ -136,7 +134,14 @@ export const registerClient = async (req, res) => {
             success: true,
             message: 'Đăng ký tài khoản thành công.',
             token,
-            data: clientData
+            data: {
+                id: clientData._id,
+                fullname: clientData.fullname,
+                email: clientData.email,
+                phone: clientData.phone,
+                avatar_url: clientData.avatar_url || '',
+                health_info: clientData.health_info
+            }
         });
 
     } catch (error) {
@@ -178,7 +183,7 @@ export const checkLogin = async (req, res) => {
                 fullname: req.client.fullname,
                 email: req.client.email,
                 phone: req.client.phone,
-                avatar_url: req.client.avatar_url,
+                avatar_url: req.client.avatar_url || '',
                 health_info: req.client.health_info
             }
         });
@@ -390,7 +395,10 @@ export const getMyProfile = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            data: client,
+            data: {
+                ...client.toObject(), // Convert Mongoose document to plain object
+                avatar_url: client.avatar_url || '' // Ensure avatar_url is never null/undefined
+            },
         });
     } catch (error) {
         console.error(`❌ [GET MY PROFILE ERROR]: ${error.message}`);
@@ -454,21 +462,21 @@ export const updateProfile = async (req, res) => {
  */
 export const updateAvatar = async (req, res) => {
     try {
-        // ID is retrieved from the token via `protect` middleware
         const clientId = req.client._id;
-        const { avatar_url } = req.body;
 
-        if (!avatar_url) {
+        if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message: 'Vui lòng cung cấp URL ảnh đại diện mới',
+                message: 'Vui lòng tải lên một tệp ảnh',
             });
         }
+
+        // Create a web-accessible URL path
+        const avatar_url = req.file.path.replace(/\\/g, '/').replace('public/', '/');
 
         const client = await Client.findById(clientId);
 
         if (!client) {
-            // This case should theoretically not be reached if the token is valid
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy người dùng',
@@ -491,3 +499,9 @@ export const updateAvatar = async (req, res) => {
         });
     }
 };
+
+
+
+
+
+

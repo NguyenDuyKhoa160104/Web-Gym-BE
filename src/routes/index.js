@@ -12,11 +12,15 @@ import * as StudentController from '../controllers/StudentController.js';
 import * as ScheduleController from '../controllers/ScheduleController.js';
 import * as RoomController from '../controllers/RoomController.js';
 import * as PostController from '../controllers/PostController.js';
+import * as SearchController from '../controllers/SearchController.js';
+import * as PackageReviewController from '../controllers/PackageReviewController.js';
 
 // Import Middlewares as namespaces
 import * as AdminMiddleware from '../middlewares/AdminMiddleware.js';
 import * as ClientMiddleware from '../middlewares/ClientMiddleware.js';
 import * as CoachMiddleware from '../middlewares/CoachMiddleware.js';
+import upload from '../middlewares/uploadMiddleware.js';
+
 
 
 /**
@@ -167,6 +171,21 @@ router.post('/admin/unmaintain-room/:id',
     AdminMiddleware.authorizeSuperAdmin,
     RoomController.unmaintainRoom
 )
+router.get('/admin/all-package-reviews',
+    AdminMiddleware.protect,
+    AdminMiddleware.authorizeSuperAdmin,
+    PackageReviewController.getAllReviews
+);
+router.post('/admin/approved/package-review/:id',
+    AdminMiddleware.protect,
+    AdminMiddleware.authorizeSuperAdmin,
+    PackageReviewController.approveReview
+)
+router.post('/admin/approved/reject-review/:id',
+    AdminMiddleware.protect,
+    AdminMiddleware.authorizeSuperAdmin,
+    PackageReviewController.rejectReview
+)
 
 /**
  * ==========================================
@@ -177,59 +196,51 @@ router.post('/admin/unmaintain-room/:id',
 router.post('/client/login',
     ClientController.loginClient
 );
-
 router.post('/client/register',
     ClientController.registerClient
 );
-
 router.get('/client/check-login',
     ClientMiddleware.protect,
     ClientController.checkLogin
 );
-
 // Client gets all Packages
 router.get('/client/packages',
     ClientMiddleware.protect,
     PackageController.getAllPackages
 );
-
 // Client gets all Package Categories
 router.get('/client/package-categories',
     ClientMiddleware.protect,
     getAllPackageCategories
 );
-
 router.post('/client/order',
     ClientMiddleware.protect,
     OrderController.placeOrder
 );
-
-
 router.get('/client/orders',
     ClientMiddleware.protect,
     OrderController.getAllOrders
 );
-
+router.get('/client/my-orders/:id',
+    ClientMiddleware.protect,
+    OrderController.getMyOrders
+)
 router.get('/client/all-coaches',
     ClientMiddleware.protect,
     CoachController.getAllCoaches
 )
-
 router.post('/client/book-coach/:id',
     ClientMiddleware.protect,
     StudentController.bookCoach
 )
-
 router.get('/client/all-rooms',
     ClientMiddleware.protect,
     RoomController.getAllRooms
 );
-
 router.get('/client/get-room/:id',
     ClientMiddleware.protect,
     RoomController.getRoomById
 );
-
 router.get('/client/my-profile',
     ClientMiddleware.protect,
     ClientController.getMyProfile
@@ -240,11 +251,20 @@ router.post('/client/update-profile',
 )
 router.post('/client/update-avatar',
     ClientMiddleware.protect,
+    upload,
     ClientController.updateAvatar
 )
 router.get('/client/all-post/',
     ClientMiddleware.protect,
     PostController.getAllPosts
+)
+router.post('/client/review-package/:id',
+    ClientMiddleware.protect,
+    PackageReviewController.reviewPackage
+)
+router.post('/client/search',
+    ClientMiddleware.protect,
+    SearchController.searchAll
 )
 /**
  * ==========================================

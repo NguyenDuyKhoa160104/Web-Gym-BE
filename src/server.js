@@ -25,6 +25,9 @@ if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 }
 
+// Serve static files from the 'public' folder
+app.use(express.static('public'));
+
 // 4. Tích hợp các tuyến đường (Routes) từ src/routes/index.js
 app.use('/api', apiRoutes);
 

@@ -1,4 +1,5 @@
 import Order from '../models/Order.js';
+import OrderDetail from '../models/OrderDetail.js';
 import Package from '../models/Package.js';
 import Client from '../models/Client.js'; // Import Client model
 import { ACCOUNT_STATUS, ORDER_STATUS, PAYMENT_STATUS } from '../utils/constants.js';
@@ -50,6 +51,15 @@ export const placeOrder = async (req, res) => {
             status: ORDER_STATUS.PENDING, // Mặc định trạng thái đơn hàng là Đang chờ xử lý
             paymentStatus: PAYMENT_STATUS.PENDING, // Mặc định trạng thái thanh toán là Đang chờ
             // paymentMethod có thể được thêm vào từ req.body nếu có tùy chọn thanh toán
+        });
+
+        // 5. Tạo chi tiết đơn hàng
+        await OrderDetail.create({
+            order: newOrder._id,
+            package: packageId,
+            priceAtPurchase: gymPackage.price,
+            durationAtPurchase: gymPackage.durationInDays,
+            quantity: orderQuantity
         });
 
         res.status(201).json({
@@ -133,6 +143,99 @@ export const getAllOrders = async (req, res) => {
 
     } catch (error) {
         console.error(`❌ [GET ALL ORDERS ERROR]: ${error.message}`);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống khi lấy danh sách đơn hàng, vui lòng thử lại sau.',
+        });
+    }
+};
+
+/**
+ * @desc    Lấy danh sách các đơn hàng của một client (cho chính client đó)
+ * @route   POST /api/client/my-orders/:id
+ * @access  Private (Client)
+ */
+export const getMyOrders = async (req, res) => {
+    try {
+        const requestedClientId = req.params.id;
+        const authenticatedClientId = req.client._id.toString();
+
+        // Bảo vệ route: chỉ client đã đăng nhập mới có thể xem đơn hàng của chính mình
+        if (requestedClientId !== authenticatedClientId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Bạn không có quyền truy cập vào tài nguyên này.',
+            });
+        }
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const query = { client: requestedClientId };
+
+        // Lấy danh sách đơn hàng của client
+        const orders = await Order.find(query)
+            .sort({ orderDate: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        if (!orders || orders.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'Bạn chưa có đơn hàng nào.',
+                data: [],
+                pagination: {
+                    totalResults: 0,
+                    totalPages: 0,
+                    currentPage: page,
+                    limit: limit,
+                },
+            });
+        }
+
+        // Lấy chi tiết cho mỗi đơn hàng
+        const orderIds = orders.map(order => order._id);
+
+        const orderDetails = await OrderDetail.find({ order: { $in: orderIds } })
+            .populate({
+                path: 'package',
+                select: 'name price durationInDays' // Lấy các trường cần thiết từ Package
+            })
+            .lean();
+
+        // Gộp chi tiết vào từng đơn hàng
+        const ordersWithDetails = orders.map(order => {
+            return {
+                ...order,
+                details: orderDetails.filter(detail => detail.order.toString() === order._id.toString())
+            };
+        });
+
+        const totalOrders = await Order.countDocuments(query);
+        const totalPages = Math.ceil(totalOrders / limit);
+
+        res.status(200).json({
+            success: true,
+            message: 'Lấy danh sách đơn hàng của bạn thành công.',
+            data: ordersWithDetails,
+            pagination: {
+                totalResults: totalOrders,
+                totalPages: totalPages,
+                currentPage: page,
+                limit: limit,
+            },
+        });
+
+    } catch (error) {
+        console.error(`❌ [GET MY ORDERS ERROR]: ${error.message}`);
+        if (error.name === 'CastError') {
+             return res.status(400).json({
+                success: false,
+                message: 'ID khách hàng không hợp lệ.',
+            });
+        }
         res.status(500).json({
             success: false,
             message: 'Lỗi hệ thống khi lấy danh sách đơn hàng, vui lòng thử lại sau.',

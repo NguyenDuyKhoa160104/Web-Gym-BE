@@ -44,8 +44,6 @@ export const SCHEDULE_STATUS = {
 
 };
 
-
-
 export const ROOM_STATUS = {
 
     AVAILABLE: 'available',
@@ -59,4 +57,10 @@ export const ROOM_STATUS = {
 export const POST_STATUS = {
     DRAFT: 0,
     PUBLISHED: 1
+};
+
+export const PACKAGE_REVIEW_STATUS = {
+    PENDING: 'pending',
+    APPROVED: 'approved',
+    REJECTED: 'rejected'
 };
