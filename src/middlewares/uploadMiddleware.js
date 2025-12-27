@@ -1,37 +1,45 @@
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 
-// Set up storage engine
+// Cấu hình nơi lưu trữ
 const storage = multer.diskStorage({
-    destination: './public/images/Customer',
-    filename: function(req, file, cb){
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    destination: function (req, file, cb) {
+        // Sử dụng path.join để đảm bảo đường dẫn đúng trên Windows (dùng dấu \)
+        const uploadPath = path.join('public', 'images', 'Customer');
+
+        // Kiểm tra và tạo thư mục nếu chưa tồn tại
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: function (req, file, cb) {
+        // Đặt tên file: avatar-timestamp-random.ext
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-// Init upload
+// Bộ lọc chỉ cho phép file ảnh
+const fileFilter = (req, file, cb) => {
+    // Chấp nhận các loại ảnh phổ biến
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    // Kiểm tra extname và mimetype
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (extname && mimetype) {
+        cb(null, true);
+    } else {
+        cb(new Error('Chỉ chấp nhận file ảnh (jpeg, jpg, png, gif, webp)!'), false);
+    }
+};
+
 const upload = multer({
     storage: storage,
-    limits: {fileSize: 1000000}, // 1MB limit
-    fileFilter: function(req, file, cb){
-        checkFileType(file, cb);
-    }
-}).single('avatar'); // 'avatar' is the field name in the form
-
-// Check file type
-function checkFileType(file, cb){
-    // Allowed ext
-    const filetypes = /jpeg|jpg|png|gif/;
-    // Check ext
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    // Check mime
-    const mimetype = filetypes.test(file.mimetype);
-
-    if(mimetype && extname){
-        return cb(null, true);
-    } else {
-        cb('Error: Images Only!');
-    }
-}
+    fileFilter: fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 } // Giới hạn 5MB
+});
 
 export default upload;

@@ -19,7 +19,7 @@ import * as PackageReviewController from '../controllers/PackageReviewController
 import * as AdminMiddleware from '../middlewares/AdminMiddleware.js';
 import * as ClientMiddleware from '../middlewares/ClientMiddleware.js';
 import * as CoachMiddleware from '../middlewares/CoachMiddleware.js';
-import upload from '../middlewares/uploadMiddleware.js';
+import UploadMiddleware from '../middlewares/uploadMiddleware.js';
 
 
 
@@ -251,7 +251,7 @@ router.post('/client/update-profile',
 )
 router.post('/client/update-avatar',
     ClientMiddleware.protect,
-    upload,
+    UploadMiddleware.single('avatar'),
     ClientController.updateAvatar
 )
 router.get('/client/all-post/',
@@ -266,6 +266,17 @@ router.post('/client/search',
     ClientMiddleware.protect,
     SearchController.searchAll
 )
+
+router.get('/client/my-schedule/:id',
+    ClientMiddleware.protect,
+    ScheduleController.getClientMySchedules
+)
+
+router.get('/client/check-review/:id',
+    ClientMiddleware.protect,
+    PackageReviewController.checkReview
+);
+
 /**
  * ==========================================
  * ROUTES CHO COACH (HLV) - Placeholder

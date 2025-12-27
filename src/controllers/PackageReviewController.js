@@ -23,7 +23,7 @@ export const reviewPackage = async (req, res) => {
                 message: 'Bạn không có quyền thực hiện hành động này.',
             });
         }
-        
+
         // 2. Validate input
         if (!packageId) {
             return res.status(400).json({
@@ -73,7 +73,7 @@ export const reviewPackage = async (req, res) => {
                 message: 'Bạn chỉ có thể đánh giá những gói tập bạn đã mua.',
             });
         }
-        
+
         // 5. Check if the user has already reviewed this package
         const existingReview = await PackageReview.findOne({
             package: packageId,
@@ -261,4 +261,58 @@ export const approveReview = async (req, res) => {
 export const rejectReview = async (req, res) => {
     const { id: reviewId } = req.params;
     await _updateReviewStatus(reviewId, PACKAGE_REVIEW_STATUS.REJECTED, res);
+};
+
+/**
+ * @desc    Kiểm tra xem client đã đánh giá gói tập này chưa
+ * @route   GET /api/client/check-review/:id
+ * @access  Private (Client)
+ */
+export const checkReview = async (req, res) => {
+    try {
+        // 1. Dùng optional chaining (?.) để an toàn hơn nếu middleware lỗi
+        const authenticatedClientId = req.client?._id;
+        const packageId = req.params.id;
+
+        if (!packageId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng cung cấp ID của gói tập.',
+            });
+        }
+
+        // 2. CẢI TIẾN: Sử dụng .lean() để truy vấn nhanh hơn
+        // Chỉ chọn các trường cần thiết (rating, comment, createdAt)
+        const existingReview = await PackageReview.findOne({
+            package: packageId,
+            client: authenticatedClientId,
+        })
+            .select('rating comment createdAt') // Chỉ lấy các trường cần dùng
+            .lean(); // Trả về Plain Object giúp query nhẹ và nhanh hơn
+
+        // 3. Phản hồi đầy đủ hơn
+        res.status(200).json({
+            success: true,
+            data: {
+                hasReviewed: !!existingReview, // Vẫn giữ boolean để check nhanh
+                review: existingReview || null // Trả về chi tiết để UI hiển thị số sao cũ
+            },
+        });
+
+    } catch (error) {
+        console.error(`❌ [CHECK REVIEW ERROR]: ${error.message}`);
+
+        // Xử lý lỗi ID sai định dạng MongoDB (ví dụ ID quá ngắn hoặc chứa ký tự lạ)
+        if (error.name === 'CastError') {
+            return res.status(400).json({
+                success: false,
+                message: 'ID gói tập không hợp lệ.',
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống, vui lòng thử lại sau.',
+        });
+    }
 };

@@ -1,6 +1,8 @@
 import Client from '../models/Client.js';
 import jwt from 'jsonwebtoken';
+import path from 'path';
 import { ACCOUNT_STATUS } from '../utils/constants.js';
+import fs from 'fs'; // <--- BẮT BUỘC THÊM DÒNG NÀY Ở ĐẦU FILE
 
 /**
  * @desc    Đăng nhập dành cho Hội viên (Client)
@@ -93,9 +95,9 @@ export const registerClient = async (req, res) => {
                 message: 'Vui lòng cung cấp đầy đủ thông tin: họ tên, email, mật khẩu và số điện thoại.',
             });
         }
-        
+
         // 2. Kiểm tra password đủ dài
-        if(password.length < 6) {
+        if (password.length < 6) {
             return res.status(400).json({
                 success: false,
                 message: 'Mật khẩu phải có ít nhất 6 ký tự.'
@@ -119,7 +121,7 @@ export const registerClient = async (req, res) => {
             phone,
             status: ACCOUNT_STATUS.ACTIVE // Mặc định là active
         });
-        
+
         // Lấy lại thông tin client vừa tạo mà không có mật khẩu
         const clientData = await Client.findById(newClient._id).select('-password');
         // 5. Tạo JWT Token để tự động đăng nhập
@@ -208,7 +210,7 @@ export const getAllClients = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        
+
         const search = req.query.search || '';
         const status = req.query.status;
         const sortBy = req.query.sortBy || 'createdAt';
@@ -354,7 +356,7 @@ export const lockOpenCustomer = async (req, res) => {
                 message: 'Tài khoản đã bị cấm vĩnh viễn và không thể thay đổi trạng thái (Mở hoặc Khóa).',
             });
         }
-        
+
         await _updateClientStatus(clientId, newStatus, res);
 
     } catch (error) {
@@ -460,9 +462,25 @@ export const updateProfile = async (req, res) => {
  * @route   POST /api/client/update-avatar
  * @access  Private (Client)
  */
+/**
+ * @desc    Cập nhật ảnh đại diện của Client
+ * @route   POST /api/client/update-avatar
+ * @access  Private (Client)
+ */
 export const updateAvatar = async (req, res) => {
     try {
-        const clientId = req.client._id;
+        // Giả sử middleware xác thực đã gắn thông tin client vào req.client hoặc req.user
+        const clientId = req.client?._id || req.user?._id;
+
+        // Kiểm tra xem có lấy được ID không
+        if (!clientId) {
+            // Nếu có file upload lên mà không có ID, xóa file đi
+            if (req.file) fs.unlinkSync(req.file.path);
+            return res.status(401).json({
+                success: false,
+                message: 'Không xác thực được người dùng (Token lỗi hoặc Middleware chưa gắn req.client)',
+            });
+        }
 
         if (!req.file) {
             return res.status(400).json({
@@ -471,18 +489,47 @@ export const updateAvatar = async (req, res) => {
             });
         }
 
-        // Create a web-accessible URL path
-        const avatar_url = req.file.path.replace(/\\/g, '/').replace('public/', '/');
-
+        // 1. Tìm client trong DB trước
         const client = await Client.findById(clientId);
-
         if (!client) {
+            // Nếu không tìm thấy user, xóa ảnh vừa upload lên để tránh rác
+            if (req.file) fs.unlinkSync(req.file.path);
             return res.status(404).json({
                 success: false,
-                message: 'Không tìm thấy người dùng',
+                message: 'Không tìm thấy người dùng trong CSDL',
             });
         }
 
+        // 2. Xóa ảnh cũ nếu tồn tại (Tránh đầy bộ nhớ server)
+        if (client.avatar_url) {
+            // Logic: Lấy đường dẫn file cũ từ URL
+            // Sử dụng process.cwd() để đảm bảo đường dẫn đúng từ thư mục gốc
+            // Loại bỏ dấu '/' ở đầu avatar_url nếu có để path.join hoạt động đúng
+            const relativeAvatarPath = client.avatar_url.startsWith('/') ? client.avatar_url.substring(1) : client.avatar_url;
+            const oldAvatarPath = path.join(process.cwd(), 'public', relativeAvatarPath);
+
+            // Kiểm tra file có tồn tại không rồi mới xóa
+            if (fs.existsSync(oldAvatarPath)) {
+                try {
+                    fs.unlinkSync(oldAvatarPath);
+                    console.log(`Deleted old avatar: ${oldAvatarPath}`);
+                } catch (err) {
+                    console.error("Lỗi khi xóa ảnh cũ:", err);
+                }
+            }
+        }
+
+        // 3. Tạo đường dẫn URL cho ảnh mới
+        // Chuẩn hóa dấu gạch chéo (Windows dùng \)
+        let relativePath = req.file.path.replace(/\\/g, '/');
+
+        // Bỏ phần 'public' ở đầu để tạo URL truy cập qua web
+        // Ví dụ: public/images/Customer/abc.jpg -> /images/Customer/abc.jpg
+        const avatar_url = relativePath.startsWith('public/')
+            ? relativePath.replace('public/', '/')
+            : '/' + relativePath;
+
+        // 4. Lưu vào DB
         client.avatar_url = avatar_url;
         const updatedClient = await client.save();
 
@@ -491,16 +538,25 @@ export const updateAvatar = async (req, res) => {
             message: 'Cập nhật ảnh đại diện thành công',
             data: updatedClient,
         });
+
     } catch (error) {
+        // Nếu có lỗi hệ thống, xóa ảnh vừa upload để dọn rác
+        if (req.file && fs.existsSync(req.file.path)) {
+            try {
+                fs.unlinkSync(req.file.path);
+            } catch (e) {
+                console.error("Không thể xóa file rác:", e);
+            }
+        }
+
         console.error(`❌ [UPDATE AVATAR ERROR]: ${error.message}`);
+        // TRẢ VỀ CHI TIẾT LỖI ĐỂ DEBUG (sau này production có thể ẩn đi)
         res.status(500).json({
             success: false,
-            message: 'Lỗi hệ thống, vui lòng thử lại sau.',
+            message: 'Lỗi hệ thống: ' + error.message,
         });
     }
 };
-
-
 
 
 

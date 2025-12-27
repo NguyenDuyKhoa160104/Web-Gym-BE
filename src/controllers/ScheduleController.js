@@ -84,7 +84,7 @@ export const deleteSchedule = async (req, res) => {
 };
 
 // Lấy danh sách lịch trình của một coach
-export const getMySchedules = async (req, res) => {
+export const getClientMySchedules = async (req, res) => {
     try {
         const coachId = req.params.id;
 
@@ -120,6 +120,62 @@ export const getMySchedules = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Lỗi hệ thống, vui lòng thử lại sau.',
+        });
+    }
+};
+
+/**
+ * @desc    Lấy danh sách lịch tập của hội viên
+ * @route   GET /api/client/my-schedule/:id
+ * @access  Private (Client)
+ */
+export const getMySchedules = async (req, res) => {
+    try {
+        const clientId = req.params.id;
+
+        // 1. Kiểm tra quyền truy cập (Bảo mật)
+        // Đảm bảo người đang request (từ token) chính là người sở hữu id này
+        if (req.client._id.toString() !== clientId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Bạn không có quyền xem lịch tập của người khác',
+            });
+        }
+
+        // 2. Tìm lịch tập trong Database
+        // Giả sử model Schedule có field 'client' (hoặc client_id) và 'class' (hoặc class_id)
+        // Lấy các lịch có trạng thái 'confirmed' (hoặc tương đương) và sắp xếp theo thời gian mới nhất
+        const schedules = await Schedule.find({ client: clientId })
+            .populate({
+                path: 'class', // Tên field tham chiếu tới bảng Class
+                select: 'name instructor room time date' // Chỉ lấy các trường cần thiết để hiển thị
+            })
+            .sort({ date: 1, time: 1 }); // Sắp xếp tăng dần theo ngày giờ (lịch sắp tới trước)
+
+        // 3. (Tùy chọn) Lọc bỏ các lịch đã quá hạn nếu cần
+        // const upcomingSchedules = schedules.filter(s => new Date(s.date) >= new Date());
+
+        if (!schedules || schedules.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'Chưa có lịch tập nào',
+                data: [],
+            });
+        }
+
+        // 4. Trả về dữ liệu
+        res.status(200).json({
+            success: true,
+            count: schedules.length,
+            data: schedules,
+        });
+
+    } catch (error) {
+        console.error(`❌ [GET SCHEDULE ERROR]: ${error.message}`);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống khi lấy lịch tập',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
